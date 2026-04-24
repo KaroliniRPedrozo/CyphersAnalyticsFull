@@ -5,6 +5,8 @@ import api from '../services/api';
 import { getRankImg, getAgenteCard, getAgenteIcone, getMapaImg, getAgenteHabilidades, getAgenteArtwork } from '../services/assets';
 import logoValorant from '../assets/logo-valorant.png';
 import skullIcon from '../assets/skull-icon.webp';
+import bgAgents from '../assets/bg-agents.jpg';
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -84,11 +86,30 @@ export default function Dashboard() {
 
   return (
     <div style={s.page}>
+      {/* Fundo da imagem com overlay */}
+      <div style={s.bgLayer} />
 
-      {/* ══ SIDEBAR ══ */}
+      {/* TOPBAR — Ocupa todo espaço superior */}
+      <header style={s.topbar}>
+        <nav style={s.nav}>
+          <button style={modoAtivo === 'todos' ? s.navOn : s.navOff} onClick={() => setModoAtivo('todos')}>TODOS</button>
+          {modos.map(m => (
+            <button key={m} style={modoAtivo === m ? s.navOn : s.navOff} onClick={() => setModoAtivo(m)}>
+              {m.toUpperCase()}
+            </button>
+          ))}
+        </nav>
+        <div style={s.playerTag}>
+          <span style={s.playerNome}>{gameName} #{tagLine}</span>
+          <img src={logoValorant} alt="" style={{ width: 16, opacity: 0.5 }} />
+        </div>
+      </header>
+
+      {/* Container com sidebar + main */}
+      <div style={s.contentWrapper}>
       <aside style={s.sidebar}>
-        {/* Topo: logo + temporada */}
-        <div style={s.sTop}>
+        {/* Topo: logo + temporada — acima do card */}
+        <div style={{ ...s.sTop, position:'relative', zIndex:2 }}>
           <img src={logoValorant} alt="Logo" style={s.sLogo} />
           <div style={s.sTemporada}>
             <span>TEMPORADA 2026</span>
@@ -96,10 +117,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Centro: espaço vazio para empurrar card para baixo */}
-        <div style={{ flex: 1 }} />
-
-        {/* Card grande do agente — embaixo */}
+        {/* Card do agente cobrindo toda a sidebar */}
         <div style={s.sAgenteCard}>
           {agenteCard
             ? <img src={agenteCard} alt={dados?.melhorAgente} style={s.sAgenteImg} />
@@ -107,33 +125,16 @@ export default function Dashboard() {
           }
         </div>
 
-        {/* Rank embaixo do card */}
+        {/* Rank e botão sair — sobre o card com fade */}
         <div style={s.sRankBox}>
           {rankImg && <img src={rankImg} alt={dados?.rankAtual} style={s.sRankImg} />}
           <span style={s.sRankNome}>{dados?.rankAtual?.toUpperCase() || 'UNRANKED'}</span>
         </div>
-
         <button onClick={logout} style={s.sSairBtn}>SAIR</button>
       </aside>
 
       {/* ══ MAIN ══ */}
       <main style={s.main}>
-
-        {/* TOPBAR */}
-        <header style={s.topbar}>
-          <nav style={s.nav}>
-            <button style={modoAtivo === 'todos' ? s.navOn : s.navOff} onClick={() => setModoAtivo('todos')}>TODOS</button>
-            {modos.map(m => (
-              <button key={m} style={modoAtivo === m ? s.navOn : s.navOff} onClick={() => setModoAtivo(m)}>
-                {m.toUpperCase()}
-              </button>
-            ))}
-          </nav>
-          <div style={s.playerTag}>
-            <span style={s.playerNome}>{gameName} #{tagLine}</span>
-            <img src={logoValorant} alt="" style={{ width: 16, opacity: 0.5 }} />
-          </div>
-        </header>
 
         {/* LINHA 1: Agente + Resumo */}
         <div style={s.l1}>
@@ -304,35 +305,37 @@ export default function Dashboard() {
             );
           })}
         </div>
-
       </main>
+      </div>
     </div>
   );
 }
 
 const s = {
-  page:        { display:'flex', height:'100vh', width:'100vw', background:'#0a0d14', color:'#fff', fontFamily:"'Segoe UI',sans-serif", overflow:'hidden' },
+  page:        { display:'flex', flexDirection:'column', height:'100vh', width:'100vw', color:'#fff', fontFamily:"'Segoe UI',sans-serif", overflow:'hidden', position:'relative', background:'transparent' },
   loadingPage: { display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', height:'100vh', background:'#0a0d14' },
   btnRetry:    { padding:'0.5rem 1.5rem', background:'#ff4655', color:'#fff', border:'none', borderRadius:3, cursor:'pointer', fontWeight:700 },
+  bgLayer:     { position:'absolute', inset:0, background:`url(${bgAgents})`, backgroundSize:'cover', backgroundPosition:'center', zIndex:0, pointerEvents:'none' },
+  contentWrapper: { display:'flex', flex:1, position:'relative', zIndex:1 },
 
   // Sidebar
-  sidebar:     { width:'240px', minWidth:'240px', background:'linear-gradient(180deg,#0d1117 0%,#080c14 100%)', borderRight:'1px solid rgba(255,70,85,0.08)', display:'flex', flexDirection:'column', alignItems:'center', padding:'1.25rem 1rem 1.5rem', gap:'0.75rem', overflow:'hidden' },
-  sTop:        { display:'flex', flexDirection:'column', alignItems:'center', gap:'0.4rem', width:'100%' },
+  sidebar:     { width:'240px', minWidth:'240px', background:'linear-gradient(180deg,#0d1117 0%,#080c14 100%)', borderRight:'1px solid rgba(255,70,85,0.08)', display:'flex', flexDirection:'column', alignItems:'center', padding:'1.25rem 1rem 1.5rem', gap:'0.5rem', overflow:'hidden', position:'relative', zIndex:1 },
+  sTop:        { display:'flex', flexDirection:'column', alignItems:'center', gap:'0.5rem', width:'100%' },
   sLogo:       { width:42, filter:'drop-shadow(0 0 10px rgba(255,70,85,0.9))' },
-  sTemporada:  { display:'flex', flexDirection:'column', alignItems:'center', color:'#ffffff', fontSize:'0.72rem', fontWeight:700, letterSpacing:1.5, textAlign:'center', lineHeight:1.8 },
-  sAgenteCard: { width:'210px', height:'320px', borderRadius:3, overflow:'hidden', border:'1px solid rgba(255,70,85,0.2)', background:'#0f1520', flexShrink:0, marginTop:'0.5rem' },
-  sAgenteImg:  { width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' },
-  sAgenteVazio:{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'#374151', fontSize:'2rem' },
-  sRankBox:    { display:'flex', flexDirection:'column', alignItems:'center', gap:'0.1rem' },
-  sRankImg:    { width:96 },
-  sRankNome:   { color:'#ff4655', fontSize:'0.72rem', fontWeight:900, letterSpacing:3 },
-  sSairBtn:    { padding:'0.4rem 1.25rem', background:'transparent', border:'1px solid rgba(255,70,85,0.15)', color:'#ffffff', borderRadius:2, cursor:'pointer', fontSize:'0.72rem', fontWeight:700, letterSpacing:2, marginTop:'0.35rem' },
+  sTemporada:  { display:'flex', flexDirection:'column', alignItems:'center', color:'#9ca3af', fontSize:'0.82rem', fontWeight:700, letterSpacing:1.5, textAlign:'center', lineHeight:1.8 },
+  sAgenteCard: { width:'240px', position:'absolute', top:'320px', bottom:'0', left:'0', right:'0', overflow:'hidden', border:'none', background:'transparent', flexShrink:0 },
+  sAgenteImg:  { width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', maskImage:'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)', WebkitMaskImage:'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)' },
+  sAgenteVazio:{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'#374151', fontSize:'2rem', background:'#0f1520' },
+  sRankBox:    { display:'flex', flexDirection:'column', alignItems:'center', gap:'0.2rem', position:'relative', zIndex:2, marginTop:'auto' },
+  sRankImg:    { width:100 },
+  sRankNome:   { color:'#ffffff', fontSize:'0.72rem', fontWeight:900, letterSpacing:3 },
+  sSairBtn:    { padding:'0.4rem 1.25rem', background:'transparent', border:'1px solid rgb(255, 70, 86)', color:'#ffffff', borderRadius:2, cursor:'pointer', fontSize:'0.72rem', fontWeight:700, letterSpacing:2, marginTop:'0.5rem', position:'relative', zIndex:2 },
 
   // Main
-  main: { flex:1, overflowY:'auto', padding:'0 1.25rem 1rem', display:'flex', flexDirection:'column', gap:'0.75rem' },
+  main: { flex:1, overflowY:'auto', padding:'0 1.25rem 1rem', display:'flex', flexDirection:'column', gap:'0.75rem', position:'relative', zIndex:1 },
 
   // Topbar
-  topbar:    { display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid rgba(255,70,85,0.08)', padding:'1.125rem 0' },
+  topbar:    { display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid rgba(255,70,85,0.08)', padding:'1.125rem 1.25rem', background:'linear-gradient(180deg,#0d1117 0%,#080c14 100%)', width:'100%', position:'relative', zIndex:1 },
   nav:       { display:'flex', gap:'0.125rem' },
   navOff:    { padding:'0.5rem 1.5rem', background:'transparent', border:'1px solid rgba(255,255,255,0.05)', color:'#ffffff', cursor:'pointer', borderRadius:2, fontSize:'0.85rem', fontWeight:700, letterSpacing:1.5 },
   navOn:     { padding:'0.5rem 1.5rem', background:'rgba(255,70,85,0.1)', border:'1px solid #ff4655', color:'#ff4655', cursor:'pointer', borderRadius:2, fontSize:'0.85rem', fontWeight:700, letterSpacing:1.5 },
@@ -385,7 +388,7 @@ const s = {
   pAgVazio: { width:38, height:38, borderRadius:4, background:'#0f1520', display:'flex', alignItems:'center', justifyContent:'center', color:'#374151', fontSize:'0.7rem', flexShrink:0 },
   pMapaNome:{ fontSize:'0.9rem', fontWeight:700, letterSpacing:1, minWidth:80, flexShrink:0 },
   pMapaImg: { width:56, height:34, objectFit:'cover', borderRadius:3, flexShrink:0 },
-  pTag:     { padding:'0.3rem 1rem', borderRadius:2, border:'1px solid', textAlign:'center', minWidth:88, flexShrink:0, marginLeft:'auto' },
+  pTag:     { padding:'0.3rem 1rem', borderRadius:2, border:'1px solid', textAlign:'center', minWidth:105, flexShrink:0, marginLeft:'auto' },
   pStats:   { color:'#ffffff', fontSize:'0.82rem', whiteSpace:'nowrap', minWidth:140, textAlign:'right', flexShrink:0 },
 
   // Card Gráfico
