@@ -83,6 +83,68 @@ namespace api.services
             }
         }
 
+        public async Task<(int Season, int Act)> BuscarTemporadaAtual()
+        {
+            try
+            {
+                // Verifica cache primeiro
+                if (_cache.TryGetValue("valorant_temporada", out (int season, int act) cached))
+                    return cached;
+
+                _logger.LogInformation("Buscando temporada/ato atual");
+
+                var response = await _http.GetAsync("/valorant/v1/content");
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Erro ao buscar conteúdo da API: {StatusCode}", response.StatusCode);
+                    return (7, 2); // fallback — Episode 7, Act 2 (Temporada 2026)
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Resposta Henrik: {Json}", json.Substring(0, Math.Min(500, json.Length)));
+
+                var root = JsonDocument.Parse(json).RootElement;
+
+                int season = 7, act = 2;
+
+                if (root.TryGetProperty("data", out var data) &&
+                    data.ValueKind != JsonValueKind.Null)
+                {
+                    // Busca episódio (season) e ato
+                    if (data.TryGetProperty("seasons", out var seasons) &&
+                        seasons.ValueKind == JsonValueKind.Array &&
+                        seasons.GetArrayLength() > 0)
+                    {
+                        var latestSeason = seasons[seasons.GetArrayLength() - 1];
+                        if (latestSeason.TryGetProperty("id", out var seasonId))
+                        {
+                            var seasonStr = seasonId.GetString() ?? "e07a02";
+                            // ID vem como "e07a02" (episode 7, act 2)
+                            if (seasonStr.Length >= 5)
+                            {
+                                if (int.TryParse(seasonStr.Substring(1, 2), out var s))
+                                    season = s;
+                                if (int.TryParse(seasonStr.Substring(4, 2), out var a))
+                                    act = a;
+                            }
+                        }
+                    }
+                }
+
+                var result = (season, act);
+                // Cache por 1 hora
+                _cache.Set("valorant_temporada", result, TimeSpan.FromHours(1));
+
+                _logger.LogInformation("Temporada/Ato: Season {Season}, Act {Act}", season, act);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar temporada atual");
+                return (7, 2); // fallback
+            }
+        }
+
         public async Task<List<Partida>> BuscarPartidas(string gameName, string tagLine, string puuid)
         {
             try

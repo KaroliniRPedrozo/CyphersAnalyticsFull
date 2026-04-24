@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [modos, setModos]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [erro, setErro]           = useState('');
+  const [act, setAct]             = useState(1);
 
   useEffect(() => {
     if (!gameName || !tagLine) { navigate('/'); return; }
@@ -33,19 +34,24 @@ export default function Dashboard() {
       // 1. Primeiro busca novas partidas da Henrik e salva no banco
       await api.get(`/Jogadores/${gameName}/${tagLine}`);
 
-      // 2. Depois busca histórico e estatísticas já atualizados
-      const [resHistorico, resEstat, resDados] = await Promise.all([
+      // 2. Depois busca histórico, estatísticas, dados do jogador e temporada
+      const [resHistorico, resEstat, resDados, resTemporada] = await Promise.all([
         api.get(`/Jogadores/${gameName}/${tagLine}/historico?size=10`),
         api.get(`/Jogadores/${gameName}/${tagLine}/estatisticas`),
         api.get(`/Jogadores/${gameName}/${tagLine}`),
+        api.get(`/Jogadores/temporada`),
       ]);
+
+      console.log('Resposta Temporada:', resTemporada.data);
 
       setDados(resDados.data);
       setHistorico(resHistorico.data.partidas || []);
       setEstat(resEstat.data);
+      setAct(resTemporada.data?.act || 1);
       const modosUnicos = [...new Set((resHistorico.data.partidas || []).map(p => p.modo))].filter(Boolean);
       setModos(modosUnicos);
-    } catch {
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
       setErro('Erro ao carregar dados. Tente novamente.');
     } finally {
       setLoading(false);
@@ -113,7 +119,7 @@ export default function Dashboard() {
           <img src={logoValorant} alt="Logo" style={s.sLogo} />
           <div style={s.sTemporada}>
             <span>TEMPORADA 2026</span>
-            <span>ATO 1</span>
+            <span>ATO {act}</span>
           </div>
         </div>
 
@@ -321,8 +327,8 @@ const s = {
   // Sidebar
   sidebar:     { width:'240px', minWidth:'240px', background:'linear-gradient(180deg,#0d1117 0%,#080c14 100%)', borderRight:'1px solid rgba(255,70,85,0.08)', display:'flex', flexDirection:'column', alignItems:'center', padding:'1.25rem 1rem 1.5rem', gap:'0.5rem', overflow:'hidden', position:'relative', zIndex:1 },
   sTop:        { display:'flex', flexDirection:'column', alignItems:'center', gap:'0.5rem', width:'100%' },
-  sLogo:       { width:42, filter:'drop-shadow(0 0 10px rgba(255,70,85,0.9))' },
-  sTemporada:  { display:'flex', flexDirection:'column', alignItems:'center', color:'#9ca3af', fontSize:'0.82rem', fontWeight:700, letterSpacing:1.5, textAlign:'center', lineHeight:1.8 },
+  sLogo:       { width:56, filter:'drop-shadow(0 0 10px rgba(255,70,85,0.9))' },
+  sTemporada:  { display:'flex', flexDirection:'column', alignItems:'center', color:'#ffffff', fontSize:'0.82rem', fontWeight:700, letterSpacing:1.5, textAlign:'center', lineHeight:1.8 },
   sAgenteCard: { width:'240px', position:'absolute', top:'320px', bottom:'0', left:'0', right:'0', overflow:'hidden', border:'none', background:'transparent', flexShrink:0 },
   sAgenteImg:  { width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', maskImage:'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)', WebkitMaskImage:'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)' },
   sAgenteVazio:{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'#374151', fontSize:'2rem', background:'#0f1520' },
@@ -368,7 +374,7 @@ const s = {
   cardResumo: { flex:1, background:'rgba(10,14,22,0.98)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:3, padding:'0.875rem 1.125rem' },
   rTopo:      { display:'flex', alignItems:'center', gap:'1.75rem', marginBottom:'0.875rem', paddingBottom:'0.875rem', borderBottom:'1px solid rgba(255,255,255,0.05)' },
   rStat:      { display:'flex', alignItems:'center', gap:'0.75rem' },
-  rIcone:     { width:50, height:50, objectFit:'contain', filter:'invert(1) opacity(0.8)' },
+  rIcone:     { width:80, height:80, objectFit:'contain', opacity:0.85 },
   rDivider:   { width:1, height:54, background:'rgba(255,70,85,0.12)', flexShrink:0 },
   rNums:      { display:'flex', flexDirection:'column' },
   rNum:       { color:'#ff4655', fontSize:'2.8rem', fontWeight:900, lineHeight:1 },

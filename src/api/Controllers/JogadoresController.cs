@@ -22,6 +22,22 @@ namespace api.Controllers
             _logger  = logger;
         }
 
+        // GET: api/v1/Jogadores/temporada
+        [HttpGet("temporada")]
+        public async Task<IActionResult> TemporadaAtual()
+        {
+            try
+            {
+                var (season, act) = await _henrik.BuscarTemporadaAtual();
+                return Ok(new { season, act });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar temporada atual");
+                return StatusCode(500, new { erro = "Erro interno. Tente novamente mais tarde." });
+            }
+        }
+
         // GET: api/v1/Jogadores/Karo/BR1
         [HttpGet("{gameName}/{tagLine}")]
         public async Task<IActionResult> BuscarJogador(string gameName, string tagLine)
@@ -247,48 +263,6 @@ namespace api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar estatisticas de {GameName}#{TagLine}", gameName, tagLine);
-                return StatusCode(500, new { erro = "Erro interno. Tente novamente mais tarde." });
-            }
-        }
-
-        // GET: api/v1/Jogadores/ranking
-        [HttpGet("ranking")]
-        public async Task<IActionResult> Ranking()
-        {
-            try
-            {
-                var jogadores = await _context.Jogadores.ToListAsync();
-                var ranking   = new List<object>();
-
-                foreach (var jogador in jogadores)
-                {
-                    var partidas = await _context.Partidas
-                        .Where(p => p.Puuid == jogador.Puuid)
-                        .ToListAsync();
-
-                    if (!partidas.Any()) continue;
-
-                    ranking.Add(new
-                    {
-                        jogador.GameName,
-                        jogador.TagLine,
-                        jogador.RankAtual,
-                        jogador.RankImagem,
-                        TotalPartidas = partidas.Count,
-                        KdaGeral      = Math.Round(partidas.Average(p => p.Kda), 2),
-                        TaxaVitoria   = Math.Round((double)partidas.Count(p => p.Resultado == "Vitoria") / partidas.Count * 100, 1)
-                    });
-                }
-
-                var rankingOrdenado = ranking
-                    .OrderByDescending(r => ((dynamic)r).KdaGeral)
-                    .ToList();
-
-                return Ok(rankingOrdenado);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao buscar ranking");
                 return StatusCode(500, new { erro = "Erro interno. Tente novamente mais tarde." });
             }
         }
